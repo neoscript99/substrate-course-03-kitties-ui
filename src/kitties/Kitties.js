@@ -14,13 +14,7 @@ export default function Kitties (props) {
   const [kittyCnt, setKittyCnt] = useState();
   const [status, setStatus] = useState('');
 
-  // const fetchKitties = () => {
-  // TODO: 在这里调用 `api.query.kittiesModule.*` 函数去取得猫咪的信息。
-  // 你需要取得：
-  //   - 共有多少只猫咪
-  //   - 每只猫咪的主人是谁
-  //   - 每只猫咪的 DNA 是什么，用来组合出它的形态
-  // };
+  // TODO: react 端组合回需要的数组结构 (3 分)
   const constructKitty = (entry) => {
     console.debug('kitty entry:', entry);
     const [hash, { value }] = entry;
@@ -36,21 +30,22 @@ export default function Kitties (props) {
       owner: owner.toJSON()
     });
   };
-
+  // TODO: 查询出链上猫咪总数 (3 分)
+  // TODO: 查询出链上猫咪的 ID, 所属主人，及其 DNA (4 分)
   const populateKitties = () => {
-    // TODO: 在这里添加额外的逻辑。你需要组成这样的数组结构：
-    //  ```javascript
-    //  const kitties = [{
-    //    id: 0,
-    //    dna: ...,
-    //    owner: ...
-    //  }, { id: ..., dna: ..., owner: ... }]
-    //  ```
-    //api.query.kittiesModule.kittyCnt(setKittyCnt);
-    // 这个 kitties 会传入 <KittyCards/> 然后对每只猫咪进行处理
-    api.query.kittiesModule.kitties.entries().then(
-      (kitties) => setKitties(kitties.map(entry => constructKitty(entry)))
-    );
+    let unsub = null;
+    const asyncFetch = async () => {
+      unsub = await api.query.kittiesModule.kittyCnt(async cnt => {
+        console.log('kittyCnt: ', cnt);
+        setKittyCnt(cnt.words[0]);
+        const entries = await api.query.kittiesModule.kitties.entries();
+        setKitties(entries.map(entry => constructKitty(entry)));
+      });
+    };
+    asyncFetch();
+    return () => {
+      unsub && unsub();
+    };
   };
 
   useEffect(populateKitties, [api, keyring]);
